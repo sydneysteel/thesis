@@ -3,6 +3,7 @@ library(ipumsr)
 library(sjlabelled)
 library(readxl)
 library(janitor)
+library(scales)
 
 cps_ddi <- read_ipums_ddi("cps_00002.xml")
 cps_messy <- read_ipums_micro(cps_ddi, verbose = FALSE, var_attrs = NULL)
@@ -89,13 +90,41 @@ cps1 <- cps1 %>%
     FIRMSIZE == 9 ~ "Over 1,000 employees"
   ))
 
+names(cps1) <- tolower(names(cps1))
 
+# Creating a subset dataframe for the percentage of women in each
+# occupational category
 
+spread_gender <- cps1 %>% 
+  group_by(year, sex, soc_code, lbl) %>% 
+  summarize(total = sum(asecwt)) %>% 
+  spread(key = sex, value = total) %>% 
+  mutate(total = Female + Male, Female = Female / total, Male = Male / total,
+         Female = percent(round(Female, 2), accuracy = 1),
+         Male = percent(round(Male, 2), accuracy = 1))
 
+# Creating a subset dataframe for the average hours worked 
+# by men and women in each occupational category
 
-# %>% 
-#   filter(!is.na(HWTFINL)) %>% 
-#   mutate(SEX = str_replace_all(SEX, c("1" = "Male", "2" = "Female")))
+spread_hours <- cps1 %>% 
+  group_by(year, sex, soc_code, lbl) %>% 
+  summarize(avg_hrs = mean(uhrsworkly)) %>% 
+  spread(key = sex, value = avg_hrs) %>% 
+  rename(female_hours = Female, male_hours = Male) 
+
+# Creating a subset dataframe for the percent of men and women
+# working part-time in each occupational category
+
+spread_pt <- cps1 %>% 
+  group_by(year, sex, soc_code, lbl, fullpart) %>% 
+  tally(wt = asecwt) %>% 
+  mutate(n = percent(round(n / sum(n), 2), accuracy = 1)) %>% 
+  spread(key = sex, value = n) %>% 
+  filter(fullpart == 2) %>% 
+  rename(female_pt = Female, male_pt = Male) %>% 
+  select(-fullpart)
+
+mutate(n = percent(round(n/sum(n),2), accuracy = 1))
 
 
 
