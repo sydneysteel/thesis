@@ -124,7 +124,17 @@ spread_pt <- cps1 %>%
   rename(female_pt = Female, male_pt = Male) %>% 
   select(-fullpart)
 
-mutate(n = percent(round(n/sum(n),2), accuracy = 1))
+# Combining these spreads into a tidy data set. I also added a 
+# country variable for when I merge the US data with the EU data
+
+cps_tidy <- spread_gender %>% 
+  left_join(spread_hours, by = c("year", "soc_code", "lbl")) %>% 
+  left_join(spread_pt, by = c("year", "soc_code", "lbl")) %>% 
+  select(-total)
+
+cps_tidy$country <- "USA"
+
+
 
 
 
