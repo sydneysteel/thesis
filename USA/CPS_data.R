@@ -1,9 +1,10 @@
 library(tidyverse)
 library(ipumsr)
-library(sjlabelled)
 library(readxl)
 library(janitor)
 library(scales)
+
+# Reading in the IPUMS data using ipumsr package
 
 cps_ddi <- read_ipums_ddi("cps_00002.xml")
 cps_messy <- read_ipums_micro(cps_ddi, verbose = FALSE, var_attrs = NULL)
@@ -64,22 +65,38 @@ occupations2 <- occupations1 %>%
   left_join(SOC_codes, by = c("code" = "census_code")) %>% 
   na.omit()
 
+# Reading in the code list to convert SOC codes into ISCO-08 codes. I also have 
+# to convert the variables to character type so that they will be able to join with 
+# the occupations data frame
+
+soc_isco <- read_excel("soc_to_is08.xls") %>% 
+  clean_names() %>% 
+  mutate(soc = as.character(soc),
+         is08_3d = as.character(is08_3d))
+
+# Merging the IS-08 codes with the occupations data frame
+
+occupations3 <- occupations2 %>% 
+  left_join(soc_isco, by = c("soc_code" = "soc"))
+
 # Joining the occupational codes to the cps data
 
 cps1 <- cps %>% 
-  left_join(occupations2, by = "code") %>% 
+  left_join(occupations3, by = "code") %>% 
   select(-digits, -OCC10LY)
 
-# The code "9920" corresponds to unemployed persons so I need to remove it from
-# the data. I also dropped the census codes as they were no longer necessary.
+# Now that I have matched the managerial codes between the US and EU datasets (so
+# that they will be comporable when I compare the percentage of female managers across
+# countries) I can filter for managerial occupations only and drop the other code and
+# category variables
 
-cps1 <- cps1 %>% 
-  filter(soc_code != "none") %>% 
-  select(-code, -category)
+cps2 <- cps1 %>% 
+  filter(grepl("^1", is08_3d)) %>% 
+  select(-code, lbl, soc_code)
 
 # Changing the coded values for firm size and sex to descriptive values
 
-cps1 <- cps1 %>% 
+cps2 <- cps2 %>% 
   mutate(SEX = str_replace_all(SEX, c("1" = "Male", "2" = "Female"))) %>% 
   mutate(FIRMSIZE = case_when(
     FIRMSIZE == 1 ~ "Under 10 employees",
@@ -90,18 +107,16 @@ cps1 <- cps1 %>%
     FIRMSIZE == 9 ~ "Over 1,000 employees"
   ))
 
-names(cps1) <- tolower(names(cps1))
+names(cps2) <- tolower(names(cps2))
 
-# Creating a subset dataframe for the percentage of women in each
-# occupational category
+# Creating a subset dataframe for the total percentage of women managers
 
-spread_gender <- cps1 %>% 
-  group_by(year, sex, soc_code, lbl) %>% 
+spread_gender <- cps2 %>% 
+  group_by(year, sex) %>% 
   summarize(total = sum(asecwt)) %>% 
   spread(key = sex, value = total) %>% 
-  mutate(total = Female + Male, Female = Female / total, Male = Male / total,
-         Female = percent(round(Female, 2), accuracy = 1),
-         Male = percent(round(Male, 2), accuracy = 1))
+  mutate(total = Female + Male, female_managers = Female / total, male_managers = Male / total) %>% 
+  select(-Female, -Male, -total)
 
 # Creating a subset dataframe for the average hours worked 
 # by men and women in each occupational category
@@ -129,8 +144,7 @@ spread_pt <- cps1 %>%
 
 cps_tidy <- spread_gender %>% 
   left_join(spread_hours, by = c("year", "soc_code", "lbl")) %>% 
-  left_join(spread_pt, by = c("year", "soc_code", "lbl")) %>% 
-  select(-total)
+  left_join(spread_pt, by = c("year", "soc_code", "lbl"))
 
 cps_tidy$country <- "USA"
 
