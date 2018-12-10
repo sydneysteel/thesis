@@ -93,22 +93,29 @@ lfs1 <- lfs1 %>%
   left_join(is08, by = "Code") %>% 
   na.omit(cols = "coeff")
 
-# Creating a subset dataframe for the percentage of women in each
-# occupational category
+# Since I am only interested in looking at cross-national variation in the percentage of
+# female managers, I am filtering the data to only include occupational categories with 
+# a code beginning with 1, which is the major group number for managerial occupations
 
-spread_gender <- lfs1 %>% 
-  group_by(year, country, sex, Code, Category) %>%
+lfs2 <- lfs1 %>% 
+  filter(grepl("^1", Code))
+
+# Creating a subset dataframe for the percentage of women managers in 
+# each country for each year. Because I only want the aggregate managerial
+# category, I can drop the Code and Catebory variables
+
+spread_gender <- lfs2 %>% 
+  group_by(year, country, sex) %>%
   summarize(total = sum(coeff)) %>%
-  spread(key = sex, value = total) %>%
-  mutate(total = Female + Male, Female = Female / total, Male = Male / total,
-         Female = percent(round(Female, 2), accuracy = 1),
-         Male = percent(round(Male, 2), accuracy = 1))
+  spread(key = sex, value = total) %>% 
+  mutate(total = Female + Male, female_managers = Female / total, male_managers = Male / total) %>% 
+  select(-Female, -Male, -total)
 
 # Creating a subset dataframe for the average hours works by men
 # and women in each occupational category
 
-spread_hours <- lfs1 %>% 
-  group_by(year, country, Code, Category, sex) %>% 
+spread_hours <- lfs2 %>% 
+  group_by(year, country, sex) %>% 
   summarize(avg_hrs = mean(hwusual)) %>% 
   spread(key = sex, value = avg_hrs) %>% 
   rename(female_hours = Female, male_hours = Male)
@@ -116,8 +123,8 @@ spread_hours <- lfs1 %>%
 # Creating a subset dataframe for the percent of men and women
 # working part-time in each occupational category
 
-spread_pt <- lfs1 %>% 
-  group_by(year, country, sex, Code, Category, ftpt) %>% 
+spread_pt <- lfs2 %>% 
+  group_by(year, country, sex, ftpt) %>% 
   tally(wt = coeff) %>% 
   mutate(n = percent(round(n / sum(n), 2), accuracy = 1)) %>% 
   spread(key = sex, value = n) %>% 
@@ -128,13 +135,13 @@ spread_pt <- lfs1 %>%
 # Creating a subset dataframe for the average firm size of
 # each occupational category
 
-spread_firmsize <- lfs1 %>% 
-  group_by(year, country, Code, Category) %>% 
+spread_firmsize <- lfs2 %>% 
+  group_by(year, country) %>% 
   summarize(avg_firmsize = mean(sizefirm))
 
 # Combining these spreads into a tidy data set
 
 lfs_tidy <- spread_gender %>% 
-  left_join(spread_firmsize, by = c("year", "country", "Code", "Category")) %>% 
-  left_join(spread_hours, by = c("year", "country", "Code", "Category")) %>% 
-  left_join(spread_pt, by = c("year", "country", "Code", "Category"))
+  left_join(spread_firmsize, by = c("year", "country")) %>% 
+  left_join(spread_hours, by = c("year", "country")) %>% 
+  left_join(spread_pt, by = c("year", "country"))
