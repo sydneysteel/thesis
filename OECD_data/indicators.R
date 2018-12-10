@@ -98,6 +98,22 @@ leave_guarantee <- leave_guarantee %>%
          position_guarantee = str_replace_all(position_guarantee, 
                                               c("1" = "Yes", "0" = "No", ".." = "No leave available")))
 
+# Reading in the OECD Employment Protection Legislation Index data
+
+epl <- read_csv("EPL Index - OECD.csv") %>% 
+  select(COUNTRY, Country, Series, SERIES, Time, Value)
+
+# Filter for my countries as well as Version 3 of the indicator. I have 
+# chosen Version 3 because it is the most recent calculation method of the 
+# index and is more comprehensive than versions 1 or 2 because it incorporates
+# more data items relating to regulations on collective dismissals
+
+epl <- epl %>% 
+  subset(COUNTRY %in% countries$COU) %>% 
+  filter(SERIES == "EPRC_V3") %>% 
+  rename(epl_score = Value, Year = Time, COU = COUNTRY) %>% 
+  select(-SERIES, - Series)
+
 # Joining the separate spreads
 
 indicators <- paid_leave %>% 
@@ -105,5 +121,6 @@ indicators <- paid_leave %>%
   left_join(female_lfpr, by = c("Country" = "Country Name", "COU" = "Country Code", "Year")) %>% 
   left_join(services_employ, by = c("Country" = "Country Name", "COU" = "Country Code", "Year")) %>% 
   left_join(tertiary_female, by = c("Country" = "Country Name", "COU" = "Country Code", "Year")) %>% 
-  left_join(leave_guarantee, by = c("Country" = "Country Name", "COU" = "Country Code", "Year"))
+  left_join(leave_guarantee, by = c("Country" = "Country Name", "COU" = "Country Code", "Year")) %>% 
+  left_join(epl, by = c("COU", "Country", "Year"))
 
