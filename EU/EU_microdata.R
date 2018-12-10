@@ -9,7 +9,7 @@ eu_lfs <- read_fst("eulfsSubset.fst") %>%
   clean_names() %>% 
   as_tibble()
 
-# add zeros to 2 digit codes which were ommitted in data read in
+# Add zeros to 2 digit codes which were ommitted in data read in
 
 occupations <- eu_lfs %>% 
   select(isco3d, year, is883d) %>% 
@@ -18,6 +18,8 @@ occupations <- eu_lfs %>%
   mutate(new = ifelse(digits < 3, paste("0", isco3d, sep = ""), isco3d)) %>% 
   mutate(new2 = ifelse(digits2 < 3, paste("0", is883d, sep = ""), is883d))
 
+# Reading in the code structure files in order to match the codes with categories
+
 isco08_codes <- read_excel("struct08.xls") %>% 
   clean_names()
 
@@ -25,12 +27,15 @@ is88_codes <- read_excel("ISCO88 Code Index.xlsx") %>%
   clean_names() %>% 
   na.omit()
 
-# adding occupation column by matching code indexes 
+# Adding occupation column by matching code indexes 
 
 occupations <- occupations %>% 
   left_join(isco08_codes, by = c("new" = "isco_08_code")) %>% 
   left_join(is88_codes, by = c("new2" = "isco88_com_code")) %>% 
   select(-digits, -digits2)
+
+# Creating a new data frame that contains all unique values for 
+# the ISCO codes and their corresponding categories
 
 is08 <- occupations %>% 
   select(new, title_en) %>% 
@@ -46,8 +51,17 @@ is88 <- occupations %>%
 
 colnames(is88) <- c("Code", "Category")
 
+# I combined the IS08 and IS88 tables and filtered for unique values so 
+# that I could have a list of all possible code and category combinations
+# for both structures. 
+
 occupations_neat <- bind_rows(is08, is88) %>% 
   unique()
+
+# Changed the coded variables into their descriptions and grouped age 
+# observations into buckets. I also filtered the date range for 2008 - 2017 
+# so that it would match time frame of the US data (which does not go earlier than
+# 2008) when I eventually combine them
 
 lfs1 <- eu_lfs %>% 
   mutate(sex = str_replace_all(sex, c("1" = "Male", "2" = "Female")),
@@ -61,18 +75,26 @@ lfs1 <- eu_lfs %>%
   select(year, country, coeff, wstator, stapro, hhtype, ftpt, ftptreas, hwusual, is883d, sex,
          isco3d, age, marstat, sizefirm)
 
+# I combined the two seperate code columns into one comprehensive one
+# and eliminated the characters from this combined variable 
+
 lfs1 <- lfs1 %>% 
   mutate(Code = paste(isco3d, is883d, sep = "_"),
          Code = str_remove_all(Code, "[NA_]")) %>% 
   select(-is883d, -isco3d)
 
-# I used only the ISCO08 codes because I am working with years past 2008.
-# I removed all observations that had a value of NA for their coefficient in 
-# order to properly sum nation-wide averages
+# I realized that there were several codes that could not be matched for categories
+# between the IS88 and IS08 versions. Rather than trying to find the linking categories,
+# I decided to use only the ISCO08 codes and only use data from 2008 and on. I also 
+# removed all observations that had a value of NA for their coefficient in order to properly 
+# sum nation-wide averages
 
 lfs1 <- lfs1 %>% 
   left_join(is08, by = "Code") %>% 
   na.omit(cols = "coeff")
+
+# Creating a subset dataframe for the percentage of women in each
+# occupational category
 
 spread_gender <- lfs1 %>% 
   group_by(year, country, sex, Code, Category) %>%
@@ -82,11 +104,17 @@ spread_gender <- lfs1 %>%
          Female = percent(round(Female, 2), accuracy = 1),
          Male = percent(round(Male, 2), accuracy = 1))
 
+# Creating a subset dataframe for the average hours works by men
+# and women in each occupational category
+
 spread_hours <- lfs1 %>% 
   group_by(year, country, Code, Category, sex) %>% 
   summarize(avg_hrs = mean(hwusual)) %>% 
   spread(key = sex, value = avg_hrs) %>% 
   rename(female_hours = Female, male_hours = Male)
+
+# Creating a subset dataframe for the percent of men and women
+# working part-time in each occupational category
 
 spread_pt <- lfs1 %>% 
   group_by(year, country, sex, Code, Category, ftpt) %>% 
@@ -97,12 +125,16 @@ spread_pt <- lfs1 %>%
   rename(female_pt = Female, male_pt = Male) %>% 
   select(-ftpt)
 
+# Creating a subset dataframe for the average firm size of
+# each occupational category
+
 spread_firmsize <- lfs1 %>% 
   group_by(year, country, Code, Category) %>% 
   summarize(avg_firmsize = mean(sizefirm))
 
+# Combining these spreads into a tidy data set
+
 lfs_tidy <- spread_gender %>% 
   left_join(spread_firmsize, by = c("year", "country", "Code", "Category")) %>% 
   left_join(spread_hours, by = c("year", "country", "Code", "Category")) %>% 
-  left_join(spread_pt, by = c("year", "country", "Code", "Category")) %>% 
-  select(-total)
+  left_join(spread_pt, by = c("year", "country", "Code", "Category"))
