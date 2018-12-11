@@ -57,7 +57,7 @@ managers2 <- managers1 %>%
   mutate(female_hours = round(female_hours),
          male_hours = round(male_hours),
          lfpr_female = round(lfpr_female / 100, digits = 3),
-         social_exp = round(social_exp / 100, digits = 3),
+         family_benefits_exp = round(family_benefits_exp / 100, digits = 3),
          per_female_tertiary = round(per_female_tertiary / 100, digits = 3),
          employment_services = round(employment_services / 100, digits = 3),
          epl_score = round(epl_score, digits = 2),
@@ -68,6 +68,6 @@ managers2 <- managers1 %>%
 
 # Creating csv file and sending to the shiny app folder
 
-app_directory <- "/Users/sydneysteel/Thesis/App"
+app_directory <- "/Users/sydneysteel/Thesis/Female_Managers_App"
 
 write.csv(managers2, file = file.path(app_directory, "final_data.csv"))
