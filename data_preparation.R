@@ -46,30 +46,28 @@ managers1 <- managers %>%
   left_join(countries, by = c("country" = "alpha-2")) %>% 
   left_join(indicators, by = c("alpha-3" = "country_code", "year" = "Year"))
 
-# Re-organizing and tidying the column names
+# Re-organizing and tidying the column names. I converted all columns with 
+# percentages to the same format by dividing them by 100
 
 managers1 <- managers1 %>% 
   select(year, country, name, everything(), -country_name, -`alpha-3`) %>% 
   rename(country_code = country, country_name = name)
 
 managers2 <- managers1 %>% 
-  mutate(female_managers = percent(female_managers, accuracy = .1),
-         male_managers = percent(male_managers, accuracy = .1),
-         female_hours = round(female_hours),
+  mutate(female_hours = round(female_hours),
          male_hours = round(male_hours),
-         lfpr_female = percent(lfpr_female / 100, accuracy = .1),
-         social_exp = percent(social_exp / 100, accuracy = .1),
-         per_female_tertiary = percent(per_female_tertiary / 100, accuracy = .1),
-         employment_services = percent(employment_services / 100, accuracy = .1),
+         lfpr_female = round(lfpr_female / 100, digits = 3),
+         social_exp = round(social_exp / 100, digits = 3),
+         per_female_tertiary = round(per_female_tertiary / 100, digits = 3),
+         employment_services = round(employment_services / 100, digits = 3),
          epl_score = round(epl_score, digits = 2),
          mandatory_leave_days = round(mandatory_leave_days),
-         female_politicians = percent(female_politicians / 100, accuracy = .1))
+         female_politicians = round(female_politicians / 100, digits = 3),
+         female_managers = round(female_managers, digits = 3),
+         male_managers = round(male_managers, digits = 3))
 
-# Converting the columns into percentages turned the NA values into percents, so 
-# I am undoing that
+# Creating csv file and sending to the shiny app folder
 
-managers2[managers2 == "NA%"] <- NA_character_
+app_directory <- "/Users/sydneysteel/Thesis/App"
 
-
-
-
+write.csv(managers2, file = file.path(app_directory, "final_data.csv"))
