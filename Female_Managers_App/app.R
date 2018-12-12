@@ -97,7 +97,7 @@ ui <- navbarPage("Cross-national Comparisons of Female Managers", theme = shinyt
                             label = "Select year range",
                             min = 2008, max = 2017, value = c(2010, 2017), step = 1),
                 br(),
-                selectInput(inputId = "table_variable",
+                selectizeInput(inputId = "table_variable",
                             label = "Select up to 5 variables",
                             choices = variable_options,
                             multiple = TRUE,
@@ -119,7 +119,7 @@ ui <- navbarPage("Cross-national Comparisons of Female Managers", theme = shinyt
                             selected = plot_options[1]),
                 htmlOutput("define_variables_y"),
                 br(),
-                selectInput(inputId = "plot_country",
+                selectizeInput(inputId = "plot_country",
                             label = "Select up to 16 countries",
                             choices = country_options,
                             multiple = TRUE,
@@ -144,15 +144,49 @@ ui <- navbarPage("Cross-national Comparisons of Female Managers", theme = shinyt
               
               mainPane(
                 h3("Instructions"),
-                p("Select an x variable to plot against the percentage of women in management positions. A model summary and interpretation is below"),
+                p("Select an x variable to plot against the percentage of women in management positions.  See below for a model summary and interpretation."),
                 plotOutput("regression_plot"),
                 br(),
                 htmlOutput("regression_stats")))))
 
 
-# Define server logic required to draw a histogram
+# Define server 
+
 server <- function(input, output) {
    
+  # Reactive that filters table data based on user selection
+  
+  table_data <- reactive({
+    req(input$table_variable, input$table_years[1], input$table_years[2])
+    data_master %>% 
+      filter(Year >= input$table_years[1], Year <= input$table_years[2]) %>% 
+      subset(select = c(Country, Year, input$table_variable)) })
+  
+  # Reactive that subsets the countries to plot in the scatterplot
+  
+  plot_countries <- reactive({ 
+    req(input$plot_country)
+    data_master %>%
+      filter(Country %in% input$plot_country) })
+  
+  
+  
+  # Data table output.
+  # Save the data, filtered by the user-selected year and selecting for just the name and indicator
+  # to a new dataframe.
+  # Display this data frame in the app.
+  # Do not display rownames. Set custom and reactive column names.
+  
+  output$table1 <- DT::renderDataTable({
+    table_data  <- master_data %>%
+      filter(Year == input$year_table) %>%
+      select(NAME, input$table_indicator)
+    
+    DT::datatable(table_data, 
+                  rownames = FALSE,
+                  colnames = c("Administrative unit", names(crime_options[which(crime_options == input$table_indicator)])))
+  })
+  
    output$distPlot <- renderPlot({
       # generate bins based on input$bins from ui.R
       x    <- faithful[, 2] 
