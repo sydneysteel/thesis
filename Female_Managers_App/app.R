@@ -2,6 +2,7 @@ library(shiny)
 library(tidyverse)
 library(shinythemes)
 library(plotly)
+library(sjPlot)
 
 # I prepared my data in the data_preparation.R file and saved the csv in the app folder
 # I'm reading in the data and renaming the variables so they will look better in the
@@ -169,34 +170,48 @@ server <- function(input, output) {
     data_master %>%
       filter(Country %in% input$plot_country) })
   
-  
-  
   # Data table output.
-  # Save the data, filtered by the user-selected year and selecting for just the name and indicator
-  # to a new dataframe.
-  # Display this data frame in the app.
-  # Do not display rownames. Set custom and reactive column names.
   
   output$table1 <- DT::renderDataTable({
-    table_data  <- master_data %>%
-      filter(Year == input$year_table) %>%
-      select(NAME, input$table_indicator)
-    
-    DT::datatable(table_data, 
-                  rownames = FALSE,
-                  colnames = c("Administrative unit", names(crime_options[which(crime_options == input$table_indicator)])))
+    DT::datatable(data = table_data()) 
   })
   
-   output$distPlot <- renderPlot({
-      # generate bins based on input$bins from ui.R
-      x    <- faithful[, 2] 
-      bins <- seq(min(x), max(x), length.out = input$bins + 1)
-      
-      # draw the histogram with the specified number of bins
-      hist(x, breaks = bins, col = 'darkgray', border = 'white')
-   })
-}
+  # Scatter plot output
 
+  output$scatterplot <- renderPlotly({
+    ggplotly(ggplot(data = plot_countries(), aes_string(x = "Year", y = input$y, color = "Country")) + 
+               geom_point(alpha = 0.8) + geom_line(aes(color = "Country", group = "Country")) +
+               labs(x = "Year", 
+                    y = names(crime_options[which(plot_options == input$y)]))) %>% 
+      config(displayModeBar = FALSE) })
+  
+  
+  # Correlation plot output
+  
+  output$regression_plot <- renderPlot({
+    ggplot(data = master_data, aes_string(x = input$x_regression, y = "Female managers")) +
+      geom_point(alpha = 0.5) +
+      geom_smooth(method = "lm") +
+      labs(x = names(regression_options[which(regrssion_options == input$x_regression)]), 
+           y = "Female Managers")
+  })
+  
+  # Reactive HTML table output for regreassion results
+  
+  reg_table <-  reactive({
+    model <- paste0("Female managers", "  ~ ", input$x_regression)    
+    table <- tab_model(lm(model, data = master_data)) })
+  
+  # HTML table from regression results output
+  
+  output$regression_stats <- renderPrint({
+    HTML(h4("Model Summary"))
+    reg_table()
+  })
+
+  
+  
+  
 # Run the application 
 shinyApp(ui = ui, server = server)
 
