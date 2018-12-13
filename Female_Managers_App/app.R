@@ -178,8 +178,7 @@ server <- function(input, output) {
     HTML(paste(
       h3("ABOUT THIS APP"),
       p("This interactive application can be used to evaluate the percentage of women in management positions across 14 different countries from 2008 to 2017."),
-      p("Click through the above tabs to explore the data in a table, scatterplot, and linear regression model. These different lenses are intended to highlight the cross-national variations in the percentage of women managers as well as its interactions with several other social indicators.  
-        The data also helps communicate changes in crime trends from the tumultuous 1990s period through President Vladimir Putin's first two terms and the first half of Dmitry Medvedev's presidency."),
+      p("Click through the above tabs to explore the data in a table, scatterplot, and linear regression model. These different lenses are intended to highlight the cross-national variations in the percentage of women managers as well as its interactions with several other social indicators."),
       h3("SOURCES"), 
       p("European Union Labor Force Survey (EU LFS):", 
         br(),   
