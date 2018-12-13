@@ -208,8 +208,40 @@ server <- function(input, output) {
     HTML(h4("Model Summary"))
     reg_table()
   })
-
   
+  # Create a variable descriptor for the data table
+  
+  output$define_variables_table <- renderUI({
+    for(i in input$table_variable) {
+      if(is.null(input$table_variable[i])) {
+        return(NULL)
+      } else {
+        HTML(paste("Where",
+                   str_to_lower(names(variable_options[which(variable_options == input$table_variable[i])])),
+                   " is defined as ",
+                   names(variable_definitions[which(variable_defintions == input$table_variable[i])])))
+      }
+    }
+  })
+  
+  # Create a variable descriptor for the scatter plot
+  
+  output$define_variables_y <- renderUI({
+    HTML(paste("Where ",
+               str_to_lower(names(plot_options[which(plot_options == input$y)])),
+               " is defined as ",
+               names(variable_definitions[which(variable_definitions == input$y)])))  
+  })
+  
+  # Create a y variable descriptor for the reg plot
+  
+  output$define_reg_variable <- renderUI({
+    HTML(paste("Where ",
+               str_to_lower(names(regression_options[which(regression_options == input$x_regression)])),
+               " is defined as ",
+               names(variable_definitions[which(variable_definitions == input$x_regression)])))  
+  })
+
   
   
 # Run the application 
