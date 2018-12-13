@@ -4,6 +4,7 @@ library(shinythemes)
 library(plotly)
 library(sjPlot)
 
+
 # I prepared my data in the data_preparation.R file and saved the csv in the app folder
 # I'm reading in the data and renaming the variables so they will look better in the
 # plot and data tables
@@ -16,7 +17,9 @@ data_master <- read_csv("final_data.csv") %>%
          `Male part-time` = male_pt, `Female LFPR` = lfpr_female,
          `Family-benefits spending` = family_benefits_exp, `Female tertiary students` = per_female_tertiary,
          `Maternity leave` = mandatory_leave_days, `Service sector employment` = employment_services,
-         `EPL score` = epl_score, `Female legislators` = female_politicians)
+         `EPL score` = epl_score, `Female legislators` = female_politicians) 
+
+attr(data_master, "spec") <- NULL
 
 # Creating a vector of nice variable lables for user-selection in plots, tables, and regressions
 
@@ -34,22 +37,36 @@ variable_options <- c("Female employment in management" = "Female managers",
                       "Employment protection legislation score" = "EPL score", 
                       "Female representation in government" = "Female legislators")
 
+table_definitions <- c("the percentage of women in management positions" = "Female managers",
+                       "the percentage of men in management positions" = "Male managers",
+                       "the average hours per week worked by female managers" = "Female hours",
+                       "the average hours per week worked by male managers" = "Male hours",
+                       "the percentage of female managers who work part-time" = "Female part-time",
+                       "the percentage of male managers who work part-time" = "Male part-time",
+                       "the sum of all employed women divided by the working age population" = "Female LFPR",
+                       "public spending on family benefits as a percentage of GDP" = "Family-benefits spending",
+                       "the percentage of all students enrolled in tertiary education who are female" = "Female tertiary students",
+                       "the number of days of paid time-off to which a female employee is entitled to in order to take care of a newborn child" = "Maternity leave",
+                       "the number of persons working in the service sector as a percentage of total employment" = "Service sector employment",
+                       "a country's score on the OECD employment protection legislation index, which ranges from 1 - 6" = "EPL score",
+                       "the percentage of legislative seats held by women" = "Female legislators")
+
 
 # Creating a vector of definitions for these variables
 
-variable_defintions <- c("the percentage of women in management positions" = "Female managers",
-                         "the percentage of men in management positions" = "Male managers",
-                         "the average hours per week worked by female managers" = "Female hours",
-                         "the average hours per week worked by male managers" = "Male hours",
-                         "the percentage of female managers who work part-time" = "Female part-time",
-                         "the percentage of male managers who work part-time" = "Male part-time",
-                         "the sum of all employed women divided by the working age population" = "Female LFPR",
-                         "public spending on family benefits as a percentage of GDP" = "Family-benefits spending",
-                         "the percentage of all students enrolled in tertiary education who are female" = "Female tertiary students",
-                         "the number of days of paid time-off to which a female employee is entitled to in order to take care of a newborn child" = "Maternity leave",
-                         "the number of persons working in the service sector as a percentage of total employment" = "Service sector employment",
-                         "a country's score on the OECD employment protection legislation index, which ranges from 1 - 6" = "EPL score",
-                         "the percentage of legislative seats held by women" = "Female legislators")
+variable_definitions <- c("the percentage of women in management positions" = "`Female managers`",
+                         "the percentage of men in management positions" = "`Male managers`",
+                         "the average hours per week worked by female managers" = "`Female hours`",
+                         "the average hours per week worked by male managers" = "`Male hours`",
+                         "the percentage of female managers who work part-time" = "`Female part-time`",
+                         "the percentage of male managers who work part-time" = "`Male part-time`",
+                         "the sum of all employed women divided by the working age population" = "`Female LFPR`",
+                         "public spending on family benefits as a percentage of GDP" = "`Family-benefits spending`",
+                         "the percentage of all students enrolled in tertiary education who are female" = "`Female tertiary students`",
+                         "the number of days of paid time-off to which a female employee is entitled to in order to take care of a newborn child" = "`Maternity leave`",
+                         "the number of persons working in the service sector as a percentage of total employment" = "`Service sector employment`",
+                         "a country's score on the OECD employment protection legislation index, which ranges from 1 - 6" = "`EPL score`",
+                         "the percentage of legislative seats held by women" = "`Female legislators`")
 
 # Creating country choices for drop-down menu
 
@@ -57,30 +74,28 @@ country_options <- data_master %>% select(Country) %>% distinct %>% pull(Country
 
 # Creating variable choices for my plot
 
-plot_options <- c("Female employment in management" = "Female managers",
-                  "Male employment in management" = "Male managers",
-                  "Female labor force participation rate" = "Female LFPR",
-                  "Public spending on family benefits" = "Family-benefits spending",
-                  "Female share of tertiary students" = "Female tertiary students",
-                  "Share of persons employed in the service sector" = "Service sector employment",
-                  "Employment protection legislation score" = "EPL score",
-                  "Female representation in government" = "Female legislators")
+plot_options <- c("Female employment in management" = "`Female managers`",
+                  "Male employment in management" = "`Male managers`",
+                  "Female labor force participation rate" = "`Female LFPR`",
+                  "Public spending on family benefits" = "`Family-benefits spending`",
+                  "Female share of tertiary students" = "`Female tertiary students`",
+                  "Share of persons employed in the service sector" = "`Service sector employment`",
+                  "Employment protection legislation score" = "`EPL score`",
+                  "Female representation in government" = "`Female legislators`")
 
 # Creating variable choices for the x-axis of my regression
 
-regression_options <- c("Female labor force participation rate" = "Female LFPR",
-                        "Public spending on family benefits" = "Family-benefits spending",
-                        "Female share of tertiary students" = "Female tertiary students",
-                        "Share of persons employed in the service sector" = "Service sector employment",
-                        "Employment protection legislation score" = "EPL score",
-                        "Female representation in government" = "Female legislators")
+regression_options <- c("Female labor force participation rate" = "`Female LFPR`",
+                        "Public spending on family benefits" = "`Family-benefits spending`",
+                        "Female share of tertiary students" = "`Female tertiary students`",
+                        "Share of persons employed in the service sector" = "`Service sector employment`",
+                        "Employment protection legislation score" = "`EPL score`",
+                        "Female representation in government" = "`Female legislators`")
 
 # I am using a navbar layout for my shiny app so I can have multiple distinct sub-components 
 # (each with their own sidebar, tabsets, etc)
 
-ui <- fluidPage(theme = shinytheme("flatly"),
-   
-   navbarPage("",
+ui <- navbarPage("Cross-national Comparisons of Female Managers", theme = shinytheme("flatly"),
 
    tabPanel("Overview",
             htmlOutput("overview")),
@@ -90,21 +105,15 @@ ui <- fluidPage(theme = shinytheme("flatly"),
    tabPanel("Data Table",
             sidebarLayout(
               sidebarPanel(
-                selectInput(inputId = "country_table",
-                            label = "Choose country to display",
-                            choices = country_options,
-                            selected = "United States"),
+                selectInput(inputId = "table_years",
+                            label = "Select year to display",
+                            choices = c(2008:2017),
+                            selected = 2010),
                 br(),
-                sliderInput(inputId = "table_years",
-                            label = "Select year range",
-                            min = 2008, max = 2017, value = c(2010, 2017), step = 1),
-                br(),
-                selectizeInput(inputId = "table_variable",
-                            label = "Select up to 5 variables",
+                selectInput(inputId = "table_variable",
+                            label = "Select a variable to display",
                             choices = variable_options,
-                            multiple = TRUE,
-                            options = list(maxItems = 5),
-                            selected = variable_options[1]),
+                            selected = variable_options[3]),
                 htmlOutput("define_variables_table")),
               
               mainPanel(
@@ -115,23 +124,25 @@ ui <- fluidPage(theme = shinytheme("flatly"),
    tabPanel("Data Visualization",
             sidebarLayout(
               sidebarPanel(
-                selectInput(inputID = "y",
-                            label = "Select a variable to display on the y-axis",
+                selectizeInput(inputId = "plot_country",
+                            label = "Select up to 14 countries",
+                            choices = c("Select all", country_options),
+                            multiple = TRUE,
+                            options = list(maxItems = 14),
+                            selected = "Select all"),
+                br(),
+                selectInput(inputId = "y", label = "Select a variable to display on the y-axis",
                             choices = plot_options,
                             selected = plot_options[1]),
-                htmlOutput("define_variables_y"),
-                br(),
-                selectizeInput(inputId = "plot_country",
-                            label = "Select up to 16 countries",
-                            choices = country_options,
-                            multiple = TRUE,
-                            options = list(maxItems = 16),
-                            selected = country_options[1])),
+                htmlOutput("define_variables_y")),
           
               mainPanel(
-                  h3("Instructions"),
-                  p("Select up to 16 countries and a variable to view the scatter plot", br(), "Hover over each point for details")), 
-                plotlyOutput("scatterplot"))),
+                  wellPanel(h3("Instructions"),
+                  p("Select up to 14 countries and a variable to view the scatter plot", 
+                    br(), 
+                    "Hover over each point for details"),
+                  br()), 
+                plotlyOutput("scatterplot")))),
    
    # Regression
    
@@ -144,32 +155,24 @@ ui <- fluidPage(theme = shinytheme("flatly"),
                             selected = regression_options[6]),
                 htmlOutput("define_reg_variable")),
               
-              mainPane(
-                h3("Instructions"),
-                p("Select an x variable to plot against the percentage of women in management positions.  See below for a model summary and interpretation."),
-                plotOutput("regression_plot"),
+              mainPanel(
+                wellPanel(h3("Instructions"),
+                p("Select an x variable to plot against the percentage of women in management positions.")),
                 br(),
-                htmlOutput("regression_stats"))))))
+                plotOutput("regression_plot")))))
 
 
 # Define server 
 
 server <- function(input, output) {
-   
-  # Reactive that filters table data based on user selection
-  
-  table_data <- reactive({
-    req(input$table_variable, input$table_years[1], input$table_years[2])
-    data_master %>% 
-      filter(Year >= input$table_years[1], Year <= input$table_years[2]) %>% 
-      subset(select = c(Country, Year, input$table_variable)) })
-  
-  # Reactive that subsets the countries to plot in the scatterplot
   
   plot_countries <- reactive({ 
-    req(input$plot_country)
-    data_master %>%
-      filter(Country %in% input$plot_country) })
+    if (input$plot_country == "Select all") {
+      data_master
+    } else {
+      data_master %>% 
+        filter(Country %in% input$plot_country)
+    } })
   
   output$overview <- renderUI({
     HTML(paste(
@@ -213,61 +216,51 @@ server <- function(input, output) {
   # Data table output.
   
   output$table1 <- DT::renderDataTable({
-    DT::datatable(data = table_data()) 
+    table_data  <- data_master %>%
+      filter(Year == input$table_years) %>%
+      select(Country, Year, input$table_variable)
+    
+    DT::datatable(table_data, 
+                  rownames = FALSE,
+                  colnames = c("Country", "Year", 
+                               names(variable_options[which(variable_options == input$table_variable)])))
   })
   
   # Scatter plot output
 
   output$scatterplot <- renderPlotly({
     ggplotly(ggplot(data = plot_countries(), aes_string(x = "Year", y = input$y, color = "Country")) + 
-               geom_point(alpha = 0.8) + geom_line(aes(color = "Country", group = "Country")) +
+               geom_line() +
                labs(x = "Year", 
-                    y = names(crime_options[which(plot_options == input$y)]))) %>% 
+                    y = names(plot_options[which(plot_options == input$y)])) +
+               scale_x_discrete(limits = c("2008", "2016")) +
+               theme(text = element_text(size = 10))) %>% 
       config(displayModeBar = FALSE) })
   
   # Correlation plot output
   
   output$regression_plot <- renderPlot({
-    ggplot(data = master_data, aes_string(x = input$x_regression, y = "Female managers")) +
+    ggplot(data = data_master, aes_string(x = input$x_regression, y = "`Female managers`")) +
       geom_point(alpha = 0.5) +
       geom_smooth(method = "lm") +
-      labs(x = names(regression_options[which(regrssion_options == input$x_regression)]), 
-           y = "Female Managers")
+      labs(x = names(regression_options[which(regression_options == input$x_regression)]), 
+           y = "Female Managers") +
+      theme(axis.title = element_text(size = 14))
   })
-  
-  # Reactive HTML table output for regreassion results
-  
-  reg_table <-  reactive({
-    model <- paste0("Female managers", "  ~ ", input$x_regression)    
-    table <- tab_model(lm(model, data = master_data)) })
-  
-  # HTML table from regression results output
-  
-  output$regression_stats <- renderPrint({
-    HTML(h4("Model Summary"))
-    reg_table()
-  })
-  
+
   # Create a variable descriptor for the data table
   
   output$define_variables_table <- renderUI({
-    for(i in input$table_variable) {
-      if(is.null(input$table_variable[i])) {
-        return(NULL)
-      } else {
-        HTML(paste("Where",
-                   str_to_lower(names(variable_options[which(variable_options == input$table_variable[i])])),
-                   " is defined as ",
-                   names(variable_definitions[which(variable_defintions == input$table_variable[i])])))
-      }
-    }
+    HTML(paste("Where ",
+               str_to_lower(names(variable_options[which(variable_options == input$table_variable)])),
+               " is defined as ",
+               names(table_definitions[which(table_definitions == input$table_variable)])))  
   })
   
   # Create a variable descriptor for the scatter plot
   
   output$define_variables_y <- renderUI({
-    HTML(paste("Where ",
-               str_to_lower(names(plot_options[which(plot_options == input$y)])),
+    HTML(paste("Where ", str_to_lower(names(plot_options[which(plot_options == input$y)])),
                " is defined as ",
                names(variable_definitions[which(variable_definitions == input$y)])))  
   })
