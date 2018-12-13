@@ -116,39 +116,45 @@ spread_gender <- cps2 %>%
   summarize(total = sum(asecwt)) %>% 
   spread(key = sex, value = total) %>% 
   mutate(total = Female + Male, female_managers = Female / total, male_managers = Male / total) %>% 
-  select(-Female, -Male, -total)
+  select(-Female, -Male, -total) %>% 
+  ungroup()
 
 # Creating a subset dataframe for the average hours worked 
 # by men and women in each occupational category
 
-spread_hours <- cps1 %>% 
-  group_by(year, sex, soc_code, lbl) %>% 
+spread_hours <- cps2 %>% 
+  group_by(year, sex) %>% 
   summarize(avg_hrs = mean(uhrsworkly)) %>% 
   spread(key = sex, value = avg_hrs) %>% 
-  rename(female_hours = Female, male_hours = Male) 
+  rename(female_hours = Female, male_hours = Male) %>% 
+  ungroup()
 
 # Creating a subset dataframe for the percent of men and women
 # working part-time in each occupational category
 
-spread_pt <- cps1 %>% 
-  group_by(year, sex, soc_code, lbl, fullpart) %>% 
+spread_pt <- cps2 %>% 
+  group_by(year, sex, fullpart) %>% 
   tally(wt = asecwt) %>% 
   mutate(n = percent(round(n / sum(n), 2), accuracy = 1)) %>% 
   spread(key = sex, value = n) %>% 
   filter(fullpart == 2) %>% 
   rename(female_pt = Female, male_pt = Male) %>% 
-  select(-fullpart)
+  select(-fullpart) %>% 
+  ungroup()
 
 # Combining these spreads into a tidy data set. I also added a 
 # country variable for when I merge the US data with the EU data
 
 cps_tidy <- spread_gender %>% 
-  left_join(spread_hours, by = c("year", "soc_code", "lbl")) %>% 
-  left_join(spread_pt, by = c("year", "soc_code", "lbl"))
+  left_join(spread_hours, by = "year") %>% 
+  left_join(spread_pt, by = "year")
 
-cps_tidy$country <- "USA"
+cps_tidy$country <- "US"
 
+# Create file and send to main folder
 
+directory <- "/Users/sydneysteel/Thesis"
 
+write.csv(cps_tidy, file = file.path(directory, "US_data.csv"))
 
 

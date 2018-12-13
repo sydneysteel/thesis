@@ -33,18 +33,19 @@ paid_leave <- paid_leave %>%
 
 # Reading in the social spending data from the OECD
 
-family_exp <- read_csv("Social Spending on Families - OECD.csv") %>% 
-  select(COU, Country, Indicator, Year, Value)
+family_exp <- read_csv("Family benefits expenditures - OECD.csv") %>% 
+  select(LOCATION, SUBJECT, TIME, Value)
 
-# Filtering for my countries, years after 2008, the right indicator, and spreading the data.
-# Note: this data is only available for 2009 - 2013
+# Filtering for my countries and also filtering the SUBJECT variable
+# to only include total spending, which is an aggregate of the two other
+# categories: in-kind and cash. Filter for year >= 2008
 
 family_exp <- family_exp %>% 
-  subset(COU %in% countries$`alpha-3`) %>% 
-  filter(Year >= 2008,
-         Indicator == "Total public social expenditure on families as a % of GDP") %>% 
-  spread(key = Indicator, value = Value) %>% 
-  rename(social_exp = "Total public social expenditure on families as a % of GDP")
+  subset(LOCATION %in% countries$`alpha-3`) %>% 
+  filter(TIME >= 2008,
+         SUBJECT == "TOT") %>% 
+  rename(Year = TIME, COU = LOCATION, family_benefits_exp = Value) %>% 
+  select(-SUBJECT)
 
 # Reading in the female labor force participation data from the World Bank
 
@@ -149,7 +150,7 @@ indicators <- female_lfpr %>%
   left_join(epl, by = c("country_code" = "COU", "Year")) %>% 
   left_join(female_govt, by = c("country_code" = "alpha-3", "Year")) %>% 
   select(Year, country_code, country_name, everything(), -country_name.x, -Country.x, -Country.y,
-         -country_name.y, -Country.x.x, -Country.y.y, -Country)
+         -country_name.y, -Country.x.x, -Country.y.y)
 
 # Create file and send to main folder
 

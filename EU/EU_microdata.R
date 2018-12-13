@@ -109,7 +109,8 @@ spread_gender <- lfs2 %>%
   summarize(total = sum(coeff)) %>%
   spread(key = sex, value = total) %>% 
   mutate(total = Female + Male, female_managers = Female / total, male_managers = Male / total) %>% 
-  select(-Female, -Male, -total)
+  select(-Female, -Male, -total) %>% 
+  ungroup()
 
 # Creating a subset dataframe for the average hours works by men
 # and women in each occupational category
@@ -118,7 +119,8 @@ spread_hours <- lfs2 %>%
   group_by(year, country, sex) %>% 
   summarize(avg_hrs = mean(hwusual)) %>% 
   spread(key = sex, value = avg_hrs) %>% 
-  rename(female_hours = Female, male_hours = Male)
+  rename(female_hours = Female, male_hours = Male) %>% 
+  ungroup()
 
 # Creating a subset dataframe for the percent of men and women
 # working part-time in each occupational category
@@ -130,14 +132,16 @@ spread_pt <- lfs2 %>%
   spread(key = sex, value = n) %>% 
   filter(ftpt == 2) %>% 
   rename(female_pt = Female, male_pt = Male) %>% 
-  select(-ftpt)
+  select(-ftpt) %>% 
+  ungroup()
 
 # Creating a subset dataframe for the average firm size of
 # each occupational category
 
 spread_firmsize <- lfs2 %>% 
   group_by(year, country) %>% 
-  summarize(avg_firmsize = mean(sizefirm))
+  summarize(avg_firmsize = mean(sizefirm)) %>% 
+  ungroup()
 
 # Combining these spreads into a tidy data set
 
@@ -145,3 +149,9 @@ lfs_tidy <- spread_gender %>%
   left_join(spread_firmsize, by = c("year", "country")) %>% 
   left_join(spread_hours, by = c("year", "country")) %>% 
   left_join(spread_pt, by = c("year", "country"))
+
+# Create file and send to main folder
+
+directory <- "/Users/sydneysteel/Thesis"
+
+write.csv(lfs_tidy, file = file.path(directory, "EU_data.csv"))
