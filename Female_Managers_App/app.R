@@ -78,11 +78,12 @@ regression_options <- c("Female labor force participation rate" = "Female LFPR",
 # I am using a navbar layout for my shiny app so I can have multiple distinct sub-components 
 # (each with their own sidebar, tabsets, etc)
 
-ui <- navbarPage("Cross-national Comparisons of Female Managers", theme = shinytheme("flatly"),
+ui <- fluidPage(theme = shinytheme("flatly"),
    
-   # Description
-   
-   tabPanel("Overview", htmlOutput("overview")),
+   navbarPage("",
+
+   tabPanel("Overview",
+            htmlOutput("overview")),
    
    # Data table
    
@@ -148,7 +149,7 @@ ui <- navbarPage("Cross-national Comparisons of Female Managers", theme = shinyt
                 p("Select an x variable to plot against the percentage of women in management positions.  See below for a model summary and interpretation."),
                 plotOutput("regression_plot"),
                 br(),
-                htmlOutput("regression_stats")))))
+                htmlOutput("regression_stats"))))))
 
 
 # Define server 
@@ -170,6 +171,45 @@ server <- function(input, output) {
     data_master %>%
       filter(Country %in% input$plot_country) })
   
+  output$overview <- renderUI({
+    HTML(paste(
+      h3("ABOUT THIS APP"),
+      p("This interactive application can be used to evaluate the percentage of women in management positions across 14 different countries from 2008 to 2017."),
+      p("Click through the above tabs to explore the data in a table, scatterplot, and linear regression model. These different lenses are intended to highlight the cross-national variations in the percentage of women managers as well as its interactions with several other social indicators.  
+        The data also helps communicate changes in crime trends from the tumultuous 1990s period through President Vladimir Putin's first two terms and the first half of Dmitry Medvedev's presidency."),
+      h3("SOURCES"), 
+      p("European Union Labor Force Survey (EU LFS):", 
+        br(),   
+        "The EU LFS is conducted in the 28 Member States of the European Union, 2 candidate countries, and 3 countries of the European Free Trade Association (EFTA). The data collection covers the years from 1983 onwards. For this project, I was analyzing the LFS microdata for the countries in the EU-15.",
+        br(),
+        "To learn more about this data, click ",
+        tags$a(href = "https://ec.europa.eu/eurostat/web/microdata/european-union-labour-force-survey",
+               "here.")),
+      p("Current Population Survey (CPS):",
+        br(),
+        "The CPS, conducted jointly by the U.S. Census Bureau and the U.S. Bureau of Labor Statistics (BLS), is the primary source of labor force statistics for the U.S. population. For this project, I was analyzing the occupational data included in the Annual Social and Economic (ASEC) supplement to the CPS.",
+        br(),
+        "To learn more about this data, click ",
+        tags$a(href = "https://www.census.gov/programs-surveys/cps.html",
+               "here.")),
+      p("Social Indicators:",
+        br(),
+        "I pulled from several different datasets to explore social indicators related to female occupational outcomes.",
+        br(),
+        "My primary sources were the ",
+        tags$a(href = "https://data.worldbank.org/",
+               "World Bank Open DataBank"),
+        ", the United Nations' ",
+        tags$a(href = "http://hdr.undp.org/en/data",
+               "Human Development Data"),
+        ", the ",
+        tags$a(href = "http://data.uis.unesco.org/",
+               "UNESCO Institute for Statistics data"),
+        ", and the ",
+        tags$a(href = "https://data.oecd.org/",
+               "OECD databases."))))
+  })
+  
   # Data table output.
   
   output$table1 <- DT::renderDataTable({
@@ -184,7 +224,6 @@ server <- function(input, output) {
                labs(x = "Year", 
                     y = names(crime_options[which(plot_options == input$y)]))) %>% 
       config(displayModeBar = FALSE) })
-  
   
   # Correlation plot output
   
@@ -241,9 +280,9 @@ server <- function(input, output) {
                " is defined as ",
                names(variable_definitions[which(variable_definitions == input$x_regression)])))  
   })
+  
+}
 
-  
-  
 # Run the application 
 shinyApp(ui = ui, server = server)
 
